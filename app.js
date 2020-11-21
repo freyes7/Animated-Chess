@@ -291,12 +291,9 @@ for(var i = 0; i < pawnCells.length; i += 2){
 }
 
 var vertexNormals = [...vertices]
-var textureCoordinates = []
 
 for(var i = 0;i< vertices.length; i+=3){
 	vertices[i+1]-=1;
-	textureCoordinates.push(0.0);
-	textureCoordinates.push(0.0);
 }
 
 var originalVertices = [...vertices]
@@ -304,16 +301,16 @@ var originalVertices = [...vertices]
 /*=================== SHADERS =================== */
 
 var vertCode = 'attribute vec3 position;'+
-	'attribute vec2 aTextureCoord;'+
    'uniform mat4 Pmatrix;'+
    'uniform mat4 Vmatrix;'+
    'uniform mat4 Mmatrix;'+
+   'attribute vec3 color;'+//the color of the point
+   'varying vec3 vColor;'+
    'attribute vec3 aVertexNormal;'+
    'varying highp vec3 vLighting;'+
-   'varying highp vec2 vTextureCoord;'+
    'void main(void) { '+//pre-built function
 	  'gl_Position = Pmatrix*Vmatrix*Mmatrix*vec4(position, 1.);'+
-	  'vTextureCoord = aTextureCoord;'+
+	  'vColor = color;'+
 
 	  'highp vec3 ambientLight = vec3(0.3, 0.3, 0.3);'+
 	  'highp vec3 directionalLightColor = vec3(1, 1, 1);'+
@@ -325,12 +322,10 @@ var vertCode = 'attribute vec3 position;'+
    '}';
 
 var fragCode = 'precision mediump float;'+
-	'varying highp vec2 vTextureCoord;'+
-   'uniform sampler2D uSampler;'+
+   'varying vec3 vColor;'+
    'varying highp vec3 vLighting;'+
    'void main(void) {'+
-   		'highp vec4 texelColor = texture2D(uSampler, vTextureCoord);'+
-	  'gl_FragColor = vec4(texelColor.rgb * vLighting, texelColor.a)'+
+	  'gl_FragColor = vec4(vColor*vLighting, 1.);'+
    '}';
 
 var vertShader = gl.createShader(gl.VERTEX_SHADER);
@@ -512,10 +507,10 @@ var animate = function(time) {
 	gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
-	// Create and store data into texture buffer
-	var texture_buffer = gl.createBuffer ();
-	gl.bindBuffer(gl.ARRAY_BUFFER, texture_buffer);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoordinates), gl.STATIC_DRAW);
+	// Create and store data into color buffer
+	var color_buffer = gl.createBuffer ();
+	gl.bindBuffer(gl.ARRAY_BUFFER, color_buffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
 
 	// Create and store data into normal buffer
 	var normal_buffer = gl.createBuffer ();
@@ -539,10 +534,10 @@ var animate = function(time) {
 	gl.vertexAttribPointer(_position, 3, gl.FLOAT, false,0,0);
 	gl.enableVertexAttribArray(_position);
 
-	gl.bindBuffer(gl.ARRAY_BUFFER, texture_buffer);
-	var _texture = gl.getAttribLocation(shaderprogram, "aTextureCoord");
-	gl.vertexAttribPointer(_texture, 3, gl.FLOAT, false,0,0) ;
-	gl.enableVertexAttribArray(_texture);
+	gl.bindBuffer(gl.ARRAY_BUFFER, color_buffer);
+	var _color = gl.getAttribLocation(shaderprogram, "color");
+	gl.vertexAttribPointer(_color, 3, gl.FLOAT, false,0,0) ;
+	gl.enableVertexAttribArray(_color);
 	gl.useProgram(shaderprogram);
 
 	gl.bindBuffer(gl.ARRAY_BUFFER, normal_buffer);
