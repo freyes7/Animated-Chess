@@ -19,21 +19,45 @@ vertices = [
    -1, 0.2,-1, -1, 0.2, 1, 1, 0.2, 1, 1, 0.2,-1, 
 ];
 
-colors =  [
-	0.30,0.26,0.12, 0.30,0.26,0.12, 0.30,0.26,0.12, 0.30,0.26,0.12, 
-	0.30,0.26,0.12, 0.30,0.26,0.12, 0.30,0.26,0.12, 0.30,0.26,0.12,
-	0.30,0.26,0.12, 0.30,0.26,0.12, 0.30,0.26,0.12, 0.30,0.26,0.12,
-	0.30,0.26,0.12, 0.30,0.26,0.12, 0.30,0.26,0.12, 0.30,0.26,0.12,
-	0.39,0.26,0.12, 0.39,0.26,0.12, 0.39,0.26,0.12, 0.39,0.26,0.12,
-	0.39,0.26,0.12, 0.39,0.26,0.12, 0.39,0.26,0.12, 0.39,0.26,0.12
-];
-
 indices = [
    0,1,2, 0,2,3, 4,5,6, 4,6,7,
    8,9,10, 8,10,11, 12,13,14, 12,14,15,
    16,17,18, 16,18,19, 20,21,22, 20,22,23, 
 ];
 
+var texCoor = [
+	0.0,  0.0,
+    1.0,  0.0,
+    1.0,  1.0,
+    0.0,  1.0,
+    // Back
+    0.9,  0.9,
+    0.9,  0.9,
+    0.9,  0.9,
+    0.9,  0.9,
+    // Top
+    0.0,  0.0,
+    1.0,  0.0,
+    1.0,  1.0,
+    0.0,  1.0,
+    // Bottom
+    0.0,  0.0,
+    1.0,  0.0,
+    1.0,  1.0,
+    0.0,  1.0,
+    // Right
+    0.0,  0.0,
+    1.0,  0.0,
+    1.0,  1.0,
+    0.0,  1.0,
+    // Left
+    0.0,  0.0,
+    1.0,  0.0,
+    1.0,  1.0,
+    0.0,  1.0,
+]
+
+/*
 //x and z of the center of the first cell
 var xi = -1 + 1/8;
 var zi = -1 + 1/8;
@@ -290,6 +314,21 @@ for(var i = 0; i < pawnCells.length; i += 2){
 	lv += 5;
 }
 
+var cicle = [0, 0,
+        0, 1,
+        1, 0,
+        0, 1,
+        1, 1,
+        1, 0,
+ 
+        // top rung front
+        0, 0,
+        0, 1,
+        1, 0,
+        0, 1,
+        1, 1,
+        1, 0,]*/
+
 var vertexNormals = [...vertices]
 
 for(var i = 0;i< vertices.length; i+=3){
@@ -304,13 +343,12 @@ var vertCode = 'attribute vec3 position;'+
    'uniform mat4 Pmatrix;'+
    'uniform mat4 Vmatrix;'+
    'uniform mat4 Mmatrix;'+
-   'attribute vec3 color;'+//the color of the point
-   'varying vec3 vColor;'+
+   'attribute vec2 a_texcoord;'+
+   'varying vec2 v_texcoord;'+
    'attribute vec3 aVertexNormal;'+
    'varying highp vec3 vLighting;'+
    'void main(void) { '+//pre-built function
 	  'gl_Position = Pmatrix*Vmatrix*Mmatrix*vec4(position, 1.);'+
-	  'vColor = color;'+
 
 	  'highp vec3 ambientLight = vec3(0.3, 0.3, 0.3);'+
 	  'highp vec3 directionalLightColor = vec3(1, 1, 1);'+
@@ -319,13 +357,16 @@ var vertCode = 'attribute vec3 position;'+
 	  'highp vec4 transformedNormal = Mmatrix * vec4(aVertexNormal, 1.0);'+
 	  'highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);'+
 	  'vLighting = ambientLight + (directionalLightColor * directional);'+
+	  'v_texcoord = a_texcoord;'+
    '}';
 
 var fragCode = 'precision mediump float;'+
-   'varying vec3 vColor;'+
+   'varying vec2 v_texcoord;'+
+   'uniform sampler2D u_texture;'+
    'varying highp vec3 vLighting;'+
    'void main(void) {'+
-	  'gl_FragColor = vec4(vColor*vLighting, 1.);'+
+	  'highp vec4 texelColor = texture2D(u_texture, v_texcoord);'+
+	  'gl_FragColor = vec4(texelColor.rgb * vLighting, texelColor.a);'+
    '}';
 
 var vertShader = gl.createShader(gl.VERTEX_SHADER);
@@ -423,6 +464,71 @@ gl.attachShader(shaderprogram, vertShader);
 gl.attachShader(shaderprogram, fragShader);
 gl.linkProgram(shaderprogram);
 
+/*=================== texture =================== */
+
+    //
+// Initialize a texture and load an image.
+// When the image finished loading copy it into the texture.
+//
+function loadTexture(gl, url) {
+  const texture = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+
+  // Because images have to be downloaded over the internet
+  // they might take a moment until they are ready.
+  // Until then put a single pixel in the texture so we can
+  // use it immediately. When the image has finished downloading
+  // we'll update the texture with the contents of the image.
+  const level = 0;
+  const internalFormat = gl.RGBA;
+  const width = 1;
+  const height = 1;
+  const border = 0;
+  const srcFormat = gl.RGBA;
+  const srcType = gl.UNSIGNED_BYTE;
+  const pixel = new Uint8Array([0, 0, 255, 255]);  // opaque blue
+  gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+                width, height, border, srcFormat, srcType,
+                pixel);
+
+  const image = new Image();
+  image.onload = function() {
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+                  srcFormat, srcType, image);
+
+    // WebGL1 has different requirements for power of 2 images
+    // vs non power of 2 images so check if the image is a
+    // power of 2 in both dimensions.
+    if (isPowerOf2(image.width) && isPowerOf2(image.height)) {
+       // Yes, it's a power of 2. Generate mips.
+       gl.generateMipmap(gl.TEXTURE_2D);
+    } else {
+       // No, it's not a power of 2. Turn off mips and set
+       // wrapping to clamp to edge
+       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    }
+  };
+  image.src = url;
+
+  return texture;
+}
+
+function isPowerOf2(value) {
+  return (value & (value - 1)) == 0;
+}
+
+// gl.NEAREST is also allowed, instead of gl.LINEAR, as neither mipmap.
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+// Prevents s-coordinate wrapping (repeating).
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+// Prevents t-coordinate wrapping (repeating).
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+const texture = loadTexture(gl, 'board.jpg');
+
 /*=================== Drawing =================== */
 
 var THETA = 0,
@@ -472,7 +578,7 @@ var animate = function(time) {
 	}
 
 	if(dt<=1000){
-		modifyVertices(state, dt/1000);
+		//modifyVertices(state, dt/1000);
 	}
 	
 	gl.clearColor(0.5, 0.5, 0.5, 0.9);
@@ -507,15 +613,15 @@ var animate = function(time) {
 	gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
-	// Create and store data into color buffer
-	var color_buffer = gl.createBuffer ();
-	gl.bindBuffer(gl.ARRAY_BUFFER, color_buffer);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
-
 	// Create and store data into normal buffer
 	var normal_buffer = gl.createBuffer ();
 	gl.bindBuffer(gl.ARRAY_BUFFER, normal_buffer);
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexNormals), gl.STATIC_DRAW);
+
+	//texture
+	var tex_buffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, tex_buffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texCoor), gl.STATIC_DRAW);
 
 	// Create and store data into index buffer
 	var index_buffer = gl.createBuffer ();
@@ -534,10 +640,14 @@ var animate = function(time) {
 	gl.vertexAttribPointer(_position, 3, gl.FLOAT, false,0,0);
 	gl.enableVertexAttribArray(_position);
 
-	gl.bindBuffer(gl.ARRAY_BUFFER, color_buffer);
-	var _color = gl.getAttribLocation(shaderprogram, "color");
-	gl.vertexAttribPointer(_color, 3, gl.FLOAT, false,0,0) ;
-	gl.enableVertexAttribArray(_color);
+	//texture
+	gl.bindBuffer(gl.ARRAY_BUFFER, tex_buffer);
+	var texcoordLocation = gl.getAttribLocation(shaderprogram, "a_texcoord");
+	// Create a buffer for texcoords.
+	gl.enableVertexAttribArray(texcoordLocation);
+	 
+	// We'll supply texcoords as floats.
+	gl.vertexAttribPointer(texcoordLocation, 2, gl.FLOAT, false, 0, 0);
 	gl.useProgram(shaderprogram);
 
 	gl.bindBuffer(gl.ARRAY_BUFFER, normal_buffer);
@@ -553,6 +663,7 @@ var animate = function(time) {
    gl.uniformMatrix4fv(_Mmatrix, false, mo_matrix);
 
    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
+   gl.activeTexture(gl.TEXTURE0);
    gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
 
 
