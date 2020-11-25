@@ -10,3 +10,17 @@ Características
 	* El reloj que marca el tiempo de juego también tendrá una textura.
 	* Habrá una luz que genere sombras en las piezas.
 	* Animación del mate del loco.
+
+¿Como correrlo?
+
+Dentro de la carpeta del proyecto, abre una terminal y corre un Servidor Simple de python. 
+
+Python 2.x
+
+python -m SimpleHTTPServer
+
+Python 3
+
+python -m http.server
+
+Despues en tu navegador ve a localhost:8000
