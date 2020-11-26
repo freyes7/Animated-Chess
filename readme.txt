@@ -13,13 +13,13 @@ Características
 
 ¿Como correrlo?
 
-Dentro de la carpeta del proyecto, abre una terminal y corre un Servidor Simple de python. 
+Dentro de la carpeta del proyecto, abre una terminal. 
 
-Python 2.x
+Si tienes Python 2.x corre el siguiente comando
 
 python -m SimpleHTTPServer
 
-Python 3
+Si tienes Python 3 corre el siguiente comando
 
 python -m http.server
 
