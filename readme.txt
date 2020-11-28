@@ -10,6 +10,7 @@ Características
 	* El reloj que marca el tiempo de juego también tendrá una textura.
 	* Habrá una luz que genere sombras en las piezas.
 	* Animación del mate del loco.
+	* Control interactivo para mover la vista al tablero. 
 
 ¿Como correrlo?
 
